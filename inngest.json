@@ -3,11 +3,10 @@
   "id": "exciting-dogfish-63761d",
   "triggers": [
     {
-      "event": "user.signup",
+      "event": "app/user.signup",
       "definition": {
         "format": "cue",
-        "synced": true,
-        "def": "file://./events/user.signup.cue"
+        "def": "file://./events/app-user-signup.cue"
       }
     }
   ],
@@ -23,7 +22,7 @@
         {
           "step": "$trigger",
           "async": {
-            "event": "api/workflow.upserted",
+            "event": "app/reservation.booked",
             "match": "async.user.external_id == event.user.external_id",
             "ttl": "1d",
             "onTimeout": true
