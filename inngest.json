@@ -1,0 +1,35 @@
+{
+  "name": "activation-drip-email",
+  "id": "exciting-dogfish-63761d",
+  "triggers": [
+    {
+      "event": "user.signup",
+      "definition": {
+        "format": "cue",
+        "synced": true,
+        "def": "file://./events/user.signup.cue"
+      }
+    }
+  ],
+  "steps": {
+    "step-1": {
+      "id": "step-1",
+      "path": "file://./steps/1d-send-email",
+      "name": "activation-drip-email",
+      "runtime": {
+        "type": "docker"
+      },
+      "after": [
+        {
+          "step": "$trigger",
+          "async": {
+            "event": "api/workflow.upserted",
+            "match": "async.user.external_id == event.user.external_id",
+            "ttl": "1d",
+            "onTimeout": true
+          }
+        }
+      ]
+    }
+  }
+}
