@@ -1,17 +1,29 @@
-# Example Drip Campaign
+# Example Smart Drip Activation Email Campaign
 
-This example Inngest function creates a simple drip email campaign for a hypothetical
-restaurant reservation app where we consider the user "_activated_" when they have booked
-their first reservation.
+This example Inngest function defines a drip campaign that sends a new user a **targeted**
+email _if_ they have _not_ already performed the action that the email is suggesting they do.
+Imagine this flow for an application:
+
+1. User signed up
+2. If the user _**has not**_ activated within 1 day:
+   - ➡️ Send them an email to guide them to take that action
+3. If the user _**has**_ activated:
+   - 👍 Don't do anything - They already figured it out!
+
+## Guide
+
+- [Function configuration](#function-configuration)
+- [Sending events from your app](#sending-events-from-your-app)
+- [Deploying to Inngest Cloud](#deploying-to-inngest-cloud)
+
+### Function configuration
+
+The function definition is annotated to show how the above is defined in config:
 
 1. After the `app/user.signup` event is received...
 2. Wait up to 1 day (`1d`) for the user to activate (`app/reservation.booked`)...
 3. If they have not triggered the activation event (`app/reservation.booked`)...
-4. Send an email
-
-## Function configuration
-
-The function definition is annotated to show how the above is defined:
+4. Send an email via Sendgrid
 
 ```json
 {
@@ -32,6 +44,7 @@ The function definition is annotated to show how the above is defined:
     "step-1": {
       // This step will only be run "after" the below condition is true
       "id": "step-1",
+      // This is the directory where your code will be including it's Dockerfile
       "path": "file://./steps/1d-send-email",
       "name": "activation-drip-email",
       "runtime": {
@@ -59,3 +72,66 @@ The function definition is annotated to show how the above is defined:
   }
 }
 ```
+
+### Sending events from your app
+
+Imagine a JavaScript application, using the [Inngest library](https://github.com/inngest/inngest-js#readme) in your `/signup` endpoint you can add the following code:
+
+```js
+import { Inngest } from "inngest";
+
+// POST myapp.com/signup
+export default function signup(req, res) {
+  const user = await createUser(req.body.email, req.body.password);
+
+  // Send an event to Inngest
+  // You can get a Source Key from the sources section of the Inngest app
+  const inngest = new Inngest(process.env.INNGEST_SOURCE_API_KEY);
+  await inngest.send({
+    name: "app/user.signup",
+    data: { city: req.body.city /* e.g. "Detroit" */ },
+    user: {
+      external_id: user.id,
+      email: user.email,
+    },
+  });
+
+  res.redirect("/app")
+}
+```
+
+And in your code that hands where the user is considered "activated", add the other event:
+
+```js
+import { Inngest } from "inngest";
+
+// POST myapp.com/bookReservation
+export default function bookReservation(req, res) {
+  const user = await getUserFromSession(req)
+  const reservation = await createReservation(user, req.body.restaurantId, req.body.timestamp);
+
+  // Send an event to Inngest
+  const inngest = new Inngest(process.env.INNGEST_SOURCE_API_KEY);
+  await inngest.send({
+    name: "app/reservation.booked",
+    data: { restaurant: req.body.restaurantId },
+    user: {
+      external_id: user.id,
+    },
+  });
+
+  res.redirect("/app")
+}
+```
+
+### Deploying to Inngest Cloud
+
+With an [Inngest Cloud account created](https://inngest.com/sign-up?ref=github-example-drip), use the Inngest CLI to deploy your function:
+
+```
+npm install -g inngest-cli
+inngest login
+inngest deploy
+```
+
+Done! Now send the events from your application and you'll see the events and function output in the Inngest web app.
