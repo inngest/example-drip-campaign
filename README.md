@@ -13,6 +13,7 @@ Imagine this flow for an application:
 ## Guide
 
 - [Function configuration](#function-configuration)
+- [Function code](#function-code)
 - [Sending events from your app](#sending-events-from-your-app)
 - [Deploying to Inngest Cloud](#deploying-to-inngest-cloud)
 
@@ -72,6 +73,15 @@ The function definition is annotated to show how the above is defined in config:
   }
 }
 ```
+
+### Function code
+
+All of the code for the function that sends the email to SendGrid, is
+within the `steps/1d-send-email/src/index.ts` file. This code will be passed
+the `app/user.signup` event if the 1 day timeout has been reached before
+any `app/reservation.booked` email is received.
+
+➡️ [Check out `index.ts`](/steps/1d-send-email/src/index.ts)
 
 ### Sending events from your app
 
